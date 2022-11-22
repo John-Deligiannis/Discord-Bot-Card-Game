@@ -51,7 +51,7 @@ async def stat(ctx, user: discord.Member = None):
 
   if len(userStat) > 0:
     #PFP#
-    asset = user.avatar_url_as(size = 128)
+    asset = user.display_avatar
     data = BytesIO(await asset.read())
     pfp = Image.open(data)
     pfp = pfp.resize((128, 128))
@@ -226,7 +226,7 @@ async def RemoveUser(ctx, userID):
   
   connection = sqlite3.connect("Database.db")
   cursor = connection.cursor()
-  cursor.execute(f"DELETE FROM ccc WHERE UserID = {userID}")
+  cursor.execute(f"DELETE FROM cards_inventory WHERE UserID = {userID}")
 #-----------------------------------#
 #-----------------------------------#
 @client.command()
@@ -413,6 +413,7 @@ async def botTalk(ctx, *args):
   await channel.send(message)
   await ctx.send(f"<@{ctx.message.author.id}>, the message has been sent!")
 #-----------------------------------#
+          #Miscellaneous#
 #-----------------------------------#
 @client.command()
 @discord.ext.commands.has_permissions(administrator = True)
@@ -471,14 +472,6 @@ async def adminhelp(ctx):
 @client.event
 async def on_ready():
   ConsolePrint(f"{client.user} have logged in!", "yellow")
-
-
-"""@client.event
-async def on_command_error(ctx, error):
-  if isinstance(error, commands.MissingPermissions):
-    await ctx.send(f"Sorry <@{ctx.author.id}>, but you do not have permission to use this command!")
-  elif isinstance(error, commands.MissingRequiredArgument):
-    await ctx.send(f"<@{ctx.author.id}>, invalid parameter values! Please type **.help** to view the correct parameter values!")"""
 
 
 @client.event

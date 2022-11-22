@@ -17,9 +17,8 @@ connection.execute('''CREATE TABLE users(
   EXPBooster          TEXT     NOT NULL,
   CoinBooster         TEXT     NOT NULL);''')
 
-connection.execute('''CREATE TABLE ccc(
-  UserID          INT      PRIMARY KEY    NOT NULL,
-  Card           TEXT     NOT NULL);''')
+connection.execute('''CREATE TABLE cards_inventory(
+  UserID          INT      PRIMARY KEY    NOT NULL);''')
 
 connection.commit()
 connection.close()

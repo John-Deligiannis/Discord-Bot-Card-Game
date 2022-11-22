@@ -4,7 +4,6 @@
 import time
 import random
 import sqlite3
-import WebScraping
 from termcolor import colored
 #-----------------------------------#
 def PrintTextLine(color):
@@ -112,10 +111,10 @@ def SetDefaultData(UserID):
   connection = sqlite3.connect("Database.db")
   cursor = connection.cursor()
   
-  cursor.execute(f"INSERT INTO users VALUES({UserID}, {0}, {0}, {0}, {0}, '', '', '', '');")
+  cursor.execute(f"INSERT INTO users VALUES({UserID}, {0}, {0}, {0}, {0}, '', '');")
   
-  LIST = WebScraping.GetDefaultCCCRewardList()
-  cursor.execute(f"INSERT INTO ccc VALUES({UserID}, '{LIST[0]}', '{LIST[1]}', '{LIST[2]}');")
+  #cardList = []
+  cursor.execute(f"INSERT INTO cards_inventory VALUES({UserID});")
 
   cursor.execute(f"SELECT * FROM users WHERE UserID = {UserID};")
   userStat = cursor.fetchall()
@@ -128,10 +127,10 @@ def SetDefaultData(UserID):
 def GetBotChannelID(ServerName):
   if ServerName == "Test Server":
     return 869696625017229432
+  elif ServerName == "Fallen Hope: Battle Heroes":
+    return 1044473570425847878
   elif ServerName[:7] == "The SCU":
     return 833831903878053908
-  elif ServerName == "Coding Club":
-    return 882741241492697178
   return None
 #-----------------------------------#
 #Database contains data from every server, the following cuts out users of which are not associated with the server that the command is ran on#
