@@ -4,12 +4,19 @@
 import os
 import re
 import time
-import random
-import asyncio
-import display
+import string
 import sqlite3
+import numpy as np
 
-from concerns import (SubTasks, DataLists)
+# Manually Force Replit to Check For Install#
+"""os.system('pip install pymongo[srv]')
+import subprocess
+subprocess.call(['pip', 'install', 'pymongo[srv]'])"""
+
+from concerns import SubTasks as ST
+from concerns import DataLists as DL
+from concerns import BattleTasks as BT
+from concerns import TagDisplays as TD
 
 from io import BytesIO
 from termcolor import colored
@@ -17,7 +24,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 import discord
 import discord.ext.commands
-from discord.utils import get
+from discord.ui import Button, View
 #-----------------------------------#
 #Set Up Bot#
 #-----------------------------------#
@@ -33,23 +40,23 @@ client = discord.ext.commands.Bot(command_prefix='.',
 #Global Variables#
 #-----------------------------------#
 def ConsolePrint(message, color):
-  SubTasks.PrintTextLine("cyan")
+  ST.PrintTextLine("cyan")
   print(colored(message, color))
-  SubTasks.PrintTextLine("cyan")
+  ST.PrintTextLine("cyan")
 
 
 #-----------------------------------#
 #Commands#
 #-----------------------------------#
 @client.command()
-async def stat(ctx, user: discord.Member = None):
+async def viewStats(ctx, user: discord.Member = None):
   if user == None:
     user = ctx.author
 
-  connection = sqlite3.connect("Database.db")
-  cursor = connection.cursor()
-  cursor.execute(f"SELECT * FROM users WHERE UserID = {user.id};")
-  userStat = cursor.fetchall()[0]
+  connection = sqlite3.connect("Database.db")  #table
+  cursor = connection.cursor()  #goes to specific area in table
+  cursor.execute(f"SELECT * FROM users WHERE UserID = {user.id};")  #get userid
+  userStat = cursor.fetchall()[0]  #finds user
   print(userStat)
 
   if len(userStat) > 0:
@@ -86,10 +93,10 @@ async def stat(ctx, user: discord.Member = None):
     #Get Ranking#
     cursor.execute(f"SELECT * FROM users;")
     allUserStats = cursor.fetchall()
-    allUserStats.sort(key=lambda x: int(SubTasks.FromLevelToEXP(x[1], x[2])),
+    allUserStats.sort(key=lambda x: int(ST.FromLevelToEXP(x[1], x[2])),
                       reverse=True)
-    allUserStats = SubTasks.GetUsersInTheServer(allUserStats,
-                                                ctx.message.guild.members)
+    allUserStats = ST.GetUsersInTheServer(allUserStats,
+                                          ctx.message.guild.members)
     rank = 0
     for i in range(0, len(allUserStats)):
       if allUserStats[i][0] == user.id:
@@ -106,7 +113,7 @@ async def stat(ctx, user: discord.Member = None):
 
     draw.text((285, 97), (f"EXP: "), font=textFont1, fill=(122, 192, 120, 1))
     draw.text((345, 100), (
-      f"{SubTasks.GetNumberAbbreviation(EXPAtCurrentLevel)} / {SubTasks.GetNumberAbbreviation(EXPToReachNextLevel)}"
+      f"{ST.GetNumberAbbreviation(EXPAtCurrentLevel)} / {ST.GetNumberAbbreviation(EXPToReachNextLevel)}"
     ),
               font=textFont2)
 
@@ -120,10 +127,10 @@ async def stat(ctx, user: discord.Member = None):
     draw.text((685, 150), ("Msg:"), font=customFont,
               fill=(180, 230, 255, 1))  #text
 
-    draw.text((747, 152), (f"{SubTasks.GetNumberAbbreviation(messagesSent)}"),
+    draw.text((747, 152), (f"{ST.GetNumberAbbreviation(messagesSent)}"),
               font=customFont,
               fill=(10, 74, 8, 1))  #shadow
-    draw.text((745, 150), (f"{SubTasks.GetNumberAbbreviation(messagesSent)}"),
+    draw.text((745, 150), (f"{ST.GetNumberAbbreviation(messagesSent)}"),
               font=customFont,
               fill=(255, 255, 255, 1))  #font
 
@@ -155,7 +162,7 @@ async def stat(ctx, user: discord.Member = None):
 
     #Send Out Image*
     userStatImage.save("UserStat.png")
-    await ctx.send(file=discord.File("UserStat.png"))
+    await ctx.send(file=discord.File("UserStat.png"))  #sends image to discord
     os.remove("UserStat.png")
 
     ConsolePrint(f"Stat page was printed for {user}!", "green")
@@ -169,12 +176,13 @@ async def leaderboard(ctx):
   allUserStats = cursor.fetchall()
 
   #create ranking
-  allUserStats.sort(key=lambda x: int(SubTasks.FromLevelToEXP(x[1], x[2])),
-                    reverse=True)
+  allUserStats.sort(
+    key=lambda x: int(ST.FromLevelToEXP(x[1], x[2])),
+    reverse=True)  # change 1 and 2 to change what leaderboard were doing
 
   #Get only the users from this server (since the SonnyBot is ran on multiple servers)
-  allUserStats = SubTasks.GetUsersInTheServer(allUserStats,
-                                              ctx.message.guild.members)
+  allUserStats = ST.GetUsersInTheServer(allUserStats,
+                                        ctx.message.guild.members)
 
   #Get the leaderboard template board
   leaderboardImage = Image.open("Images/LeaderboardTemplate.png")
@@ -245,7 +253,10 @@ async def RemoveUser(ctx, userID):
 
   connection = sqlite3.connect("Database.db")
   cursor = connection.cursor()
-  cursor.execute(f"DELETE FROM cards_inventory WHERE UserID = {userID}")
+  cursor.execute(f"DELETE FROM cards WHERE UserID = {userID}")
+
+  connection.commit()
+  connection.close()
 
 
 #-----------------------------------#
@@ -265,16 +276,14 @@ async def changeEXP(ctx, userID, EXPInput):
   #the [0] isn't place at the fetchall to prevent a index out of bounds error that occurs when cursor returns None
   if len(userStat[0]) > 0:
     userStat = userStat[0]
-    newLevel, EXPAtCurrentLevel, n = SubTasks.CalculateForLevel(
+    newLevel, EXPAtCurrentLevel, n = ST.CalculateForLevel(
       EXPInput, userStat[1], userStat[2])
 
     if newLevel != userStat[2]:  #level up
-      channel = client.get_channel(
-        SubTasks.GetBotChannelID(ctx.message.guild.name))
+      channel = client.get_channel(ST.GetBotChannelID(ctx.message.guild.name))
 
       if EXPInput > 0:
-        levelUpCoinReward = SubTasks.GetLevelUpCoinReward(
-          userStat[2], newLevel)
+        levelUpCoinReward = ST.GetLevelUpCoinReward(userStat[2], newLevel)
         cursor.execute(
           f"UPDATE users SET Level = '{newLevel}', Coins = '{userStat[3] + levelUpCoinReward}' WHERE UserID = {userID}"
         )
@@ -300,7 +309,7 @@ async def changeEXP(ctx, userID, EXPInput):
     userStat = cursor.fetchall()[0]
     print(f"After: {userStat}")
 
-    #commit and close databse
+    #commit and close database
     connection.commit()
     connection.close()
 
@@ -398,7 +407,9 @@ async def changeMessageSent(ctx, userID, amount):
 @client.command()
 async def transactCoins(ctx, recieverUserID, coinAmount):
   senderUserID = ctx.message.author.id
-  recieverUserID = int(re.split("<@!|>", recieverUserID)[1])
+  recieverUserID = re.split("<@!|>", recieverUserID)[1]
+  print(recieverUserID)
+  print(type(recieverUserID))
   coinAmount = abs(int(coinAmount))
 
   if coinAmount > 0:
@@ -440,7 +451,7 @@ async def transactCoins(ctx, recieverUserID, coinAmount):
 
 @client.command()
 @discord.ext.commands.has_permissions(administrator=True)
-async def resetUserStat(ctx, userID):
+async def ResetUserStat(ctx, userID):
   userID = int(re.split("<@!|>", userID)[1])
 
   connection = sqlite3.connect("Database.db")
@@ -454,14 +465,25 @@ async def resetUserStat(ctx, userID):
   connection.close()
 
   await ctx.send(
-    f"<@{userID}>'s stats has been reset! (CCC progress are not included)")
+    f"<@{userID}>'s stats has been reset! (Cards are not included)")
   ConsolePrint(f"<@{client.get_user(userID)}>'s stat has been reset!", "green")
 
 
-#-----------------------------------#
-#-----------------------------------#
+@client.command()
+@discord.ext.commands.has_permissions(administrator=True)
+async def ResetUserCardInventory(ctx):
+  UserID = ctx.author.id
+  connection = sqlite3.connect("Database.db")
+  cursor = connection.cursor()
+
+  cursor.execute(f"DELETE * FROM cards WHERE CardOwnerUserID = {UserID};")
+
+  connection.commit()
+  connection.close()
 
 
+#-----------------------------------#
+#-----------------------------------#
 @client.command()
 @discord.ext.commands.has_permissions(administrator=True)
 async def botTalk(ctx, *args):
@@ -477,7 +499,7 @@ async def botTalk(ctx, *args):
 #-----------------------------------#
 #Miscellaneous#
 #-----------------------------------#
-@client.command()
+"""@client.command()
 @discord.ext.commands.has_permissions(administrator=True)
 async def mute(ctx, user: discord.Member):
   muteRole = get(ctx.message.guild.roles, name='Muted')
@@ -526,18 +548,26 @@ async def muteList(ctx):
     await ctx.send(
       f"{tempString} are currently muted, <@{ctx.message.author.id}>.")
 
+"""
+
 
 #-----------------------------------#
+#Help Commands#
 #-----------------------------------#
 @client.command()
 async def help(ctx):
-  await ctx.send(embed=display.normalCommands())
+  await ctx.send(embed=TD.normalCommands())
 
 
 @client.command()
 @discord.ext.commands.has_permissions(administrator=True)
 async def adminhelp(ctx):
-  await ctx.send(embed=display.adminCommands())
+  await ctx.send(embed=TD.adminCommands())
+
+
+@client.command()
+async def heroList(ctx):
+  await ctx.send(embed=TD.heroList())
 
 
 #-----------------------------------#
@@ -561,8 +591,8 @@ async def on_message(message):
 
   #Create Default Data#
   if len(userStat) == 0:
-    userStat = SubTasks.SetDefaultData(user.id)
-    channel = client.get_channel(SubTasks.GetBotChannelID(message.guild.name))
+    userStat = ST.SetDefaultData(user.id)
+    channel = client.get_channel(ST.GetBotChannelID(message.guild.name))
 
     #vvvvvv problem with channel send
     await channel.send(f"{user.mention} has been added to the database!")
@@ -570,18 +600,18 @@ async def on_message(message):
 
   cursor.execute(f"SELECT * FROM users WHERE UserID = {user.id};")
   userStat = cursor.fetchall()[0]
-  EXPReward = SubTasks.CalculateForChatEXP(len((message.content).split()))
-  newLevel, EXPAtCurrentLevel, n = SubTasks.CalculateForLevel(
+  EXPReward = ST.CalculateForChatEXP(len((message.content).split()))
+  newLevel, EXPAtCurrentLevel, n = ST.CalculateForLevel(
     EXPReward, userStat[1], userStat[2])
 
   #Level Up#
   if userStat[2] != newLevel and newLevel > 0:
-    levelUpCoinReward = SubTasks.GetLevelUpCoinReward(userStat[2], newLevel)
+    levelUpCoinReward = ST.GetLevelUpCoinReward(userStat[2], newLevel)
     cursor.execute(
       f"UPDATE users SET Level = '{newLevel}', Coins = '{userStat[3] + levelUpCoinReward}' WHERE UserID = {user.id}"
     )
 
-    channel = client.get_channel(SubTasks.GetBotChannelID(message.guild.name))
+    channel = client.get_channel(ST.GetBotChannelID(message.guild.name))
     await channel.send(
       f"<@{message.author.id}> has leveled up to level {newLevel}! {levelUpCoinReward} coins were awarded!"
     )
@@ -597,7 +627,7 @@ async def on_message(message):
 
 @client.event
 async def on_member_join(user):
-  channel = client.get_channel(SubTasks.GetBotChannelID(user.guild.name))
+  channel = client.get_channel(ST.GetBotChannelID(user.guild.name))
   await channel.send(f"<@{user.id}> has joined the server!")
 
   connection = sqlite3.connect("Database.db")
@@ -606,9 +636,276 @@ async def on_member_join(user):
   userStat = cursor.fetchall()
 
   if len(userStat) == 0:
-    SubTasks.SetDefaultData(user.id)
+    ST.SetDefaultData(user.id)
     await channel.send(f"<@{user}> has been added to the database!")
     ConsolePrint(f"{user.name} has been added to the database!", "green")
+
+
+#-----------------------------------#
+#Battle#
+#-----------------------------------#
+@client.command()
+async def claim_starter_hero(ctx):
+  user = ctx.author
+
+  connection = sqlite3.connect("Database.db")  #table
+  cursor = connection.cursor()  #goes to specific area in table
+  cursor.execute(f"SELECT * FROM cards WHERE CardOwnerUserID = {user.id};")
+  userCards = cursor.fetchall()
+
+  cursor.execute(f"SELECT * FROM users WHERE UserID = {user.id};")
+  userStats = cursor.fetchall()[0]
+
+  H1 = Image.open("Images/Heroes/Kotaro.png")
+  H2 = Image.open("Images/Heroes/Glaceor.png")
+  H3 = Image.open("Images/Heroes/Captain Curtis.png")
+  combinedImg = Image.fromarray(
+    np.hstack((np.array(H1), np.array(H2), np.array(H3))))
+
+  imagefinal = combinedImg.save("CardImage.png", "PNG")
+
+  #ConsolePrint(f"Card Displayed for {user. id}!", "green")
+
+  if len(userCards) == 0:
+    button1 = Button(label="Kotaro")
+    button2 = Button(label="Glaceor")
+    button3 = Button(label="Captain Curtis")
+
+    async def AddStarterCard(CardIndexNumber):
+      level, rarity, CN, CardBaseStats = BT.GenerateCard(
+        None, None, CardIndexNumber, userStats[2])
+      CBSString = "/".join(str(s) for s in CardBaseStats)
+      CardCode = BT.CreateCardCode()
+
+      cursor.execute(
+        f"INSERT INTO cards VALUES('{CardCode}',{userStats[0]},{CardIndexNumber},'{CBSString}','','')"
+      )
+
+      cursor.execute(f"SELECT * FROM cards WHERE CardOwnerUserID = {user.id};")
+      userCards = cursor.fetchall()
+      print(userCards)
+
+      connection.commit()
+      connection.close()
+
+    async def button1_callback(interaction):
+      if interaction.user == ctx.author:
+        await interaction.response.edit_message(content="Kotaro was Selected",
+                                                view=None)
+        await AddStarterCard(1)
+
+    async def button2_callback(interaction):
+      if interaction.user == ctx.author:
+        await interaction.response.edit_message(content="Glaceor was Selected",
+                                                view=None)
+        await AddStarterCard(2)
+
+    async def button3_callback(interaction):
+      if interaction.user == ctx.author:
+        await interaction.response.edit_message(
+          content="Captain Curtis was Selected", view=None)
+        await AddStarterCard(4)
+
+    button1.callback = button1_callback
+    button2.callback = button2_callback
+    button3.callback = button3_callback
+
+    view = View()
+    view.add_item(button1)
+    view.add_item(button2)
+    view.add_item(button3)
+
+    await ctx.send(file=discord.File("CardImage.png"),
+                   view=view)  #sends image to discord
+    os.remove("CardImage.png")
+    await ctx.send(
+      f"Congragulations <@{user.id}>! You've recruited your first hero!")
+    ConsolePrint(f"{user} recieved their first ever hero!", "green")
+
+  else:
+    await ctx.send(
+      f"<@{user.id}>, you seem to already have a hero! Type .select_hero to select a hero or .battle to start a battle!"
+    )
+    ConsolePrint(
+      f"{user} attempted to recieve a start hero when they already have a collection of heroes! REQUEST DENIED!",
+      "red")
+
+
+@client.command()
+async def select_hero(ctx):
+  #allows ctx.author to select a hero from (inventory) to then use in battle using cardID
+  """
+  user = ctx.author
+  connection = sqlite3.connect("Database.db")  #table
+  cursor = connection.cursor()  #goes to specific area in table
+  cursor.execute(f"SELECT * FROM cards WHERE CardOwnerUserID = {user.id};")
+  userCards = cursor.fetchall()  #finds user's cards
+
+  cursor.execute(f"SELECT * FROM users WHERE UserID = {user.id};")
+  userStats = cursor.fetchall()
+  print(userCards)
+  """
+  pass
+
+
+@client.command()
+async def battle(ctx):
+  user = ctx.author
+  connection = sqlite3.connect("Database.db")  #table
+  cursor = connection.cursor()  #goes to specific area in table
+  cursor.execute(f"SELECT * FROM cards WHERE CardOwnerUserID = {user.id};")
+  userCards = cursor.fetchall()  #finds user's cards
+
+  cursor.execute(f"SELECT * FROM users WHERE UserID = {user.id};")
+  userStats = cursor.fetchall()
+  print(userCards)
+
+  if len(userCards) == 0:
+    await ctx.send(
+      f"<@{user.id}>, you do not seem to have any heroes! Type .claim_starter_hero to claim your first hero!"
+    )
+  else:
+    userLevel = userStats[2]
+    CardStats = BT.GenerateCard(None, None, userLevel)
+    print(CardStats)
+
+    #generate wild card through connecting to card database
+    #display an image of enemy and your hero side by side with it's hp, level and name
+    #has 4 button options underneath to select your move
+    #Enemy AI selects 1 of 4 preset moves by randint(1,4)
+    #use calculation to subtract defence from attack and use that as damage, if damage is negative then set to 0
+    #next image to display will have updated hp until a card has 0 or less hp
+    #if you win then rewards will be given and a chance at getting a hero
+    #if you lose nothing happens
+
+
+@client.command()
+async def HPBar(ctx):
+  currentHP = 50
+  maxHP = 100
+  txt = Image.new("RGBA", (1000, 1000), (255, 255, 255, 0))
+  draw = ImageDraw.Draw(txt)
+
+  textFont1 = ImageFont.truetype("Fonts/FiraSans.ttf", 27)
+  textFont2 = ImageFont.truetype("Fonts/FiraSans.ttf", 24)
+
+  #Fill = (r, g, b, opacity)#
+  #Draw Stats#
+  draw.text((285, 97), (f"HP: "), font=textFont1, fill=(122, 192, 120, 1))
+  draw.text((345, 100), (
+    f"{ST.GetNumberAbbreviation(currentHP)} / {ST.GetNumberAbbreviation(maxHP)}"
+  ),
+            font=textFont2)
+
+  #Draw Percentage Bar#
+  startX = 23
+  endX = 603
+  percentage = abs(float(currentHP) / maxHP)
+  PBSizeX = abs(int(percentage * (endX - startX)))
+
+  progressBar = Image.new('RGBA', (PBSizeX, 35), "#7ac078")
+  Xoffset, Yoffset = progressBar.size
+  txt.paste(progressBar, (23, 150))
+
+  PBEnding = Image.open("Images/ProgressBarEnding.png")
+  txt.paste(PBEnding, (23 + Xoffset, 150), PBEnding)
+
+  txt.save("HPBar.png")
+  await ctx.send(file=discord.File("HPBar.png"))  #sends image to discord
+  os.remove("HPBar.png")
+
+
+"""@client.command()
+async def viewHero(ctx, user: discord.Member = None):
+  H1 = Image.open("Images/Heroes/Kotaro.png")
+  H2 = Image.open("Images/Heroes/Glaceor.png")
+  H3 = Image.open("Images/Heroes/Captain Curtis.png")
+  combinedImg = Image.fromarray(
+    np.hstack((np.array(H1), np.array(H2), np.array(H3)))
+  )
+
+  combinedImg.save("Images/TempImages/CardImage.png", "PNG")
+  file = discord.File(
+      f"Images/TempImages/CardImage.png",
+      filename=f"CardImage.png")
+  await ctx.send(file=file))  #sends image to discord
+  os.remove("Images/TempImages/CardImage.png")
+
+  #ConsolePrint(f"Card Displayed for {user. id}!", "green")"""
+
+
+@client.command()
+async def battleHero(ctx, user: discord.Member = None):
+  Hero1 = Image.open("Images/Heroes/Kotoshi.png")
+  VS = Image.open("Images/Heroes/VS.png")
+  VSresize = VS.resize((720, 720))
+  Hero2 = Image.open("Images/Heroes/Pyralis.png")
+
+  newimage = Image.fromarray(
+    np.hstack((np.array(Hero1), np.array(VSresize), np.array(Hero2))))
+
+  newimage.save("CardImage.png", "PNG")
+  await ctx.send(file=discord.File("CardImage.png"))  #sends image to discord
+  os.remove("CardImage.png")
+
+
+"""@client.command()
+async def inspect(ctx, HeroName):
+  try:
+    shownHero = Image.open(f"Images/Heroes/{HeroName}.png")
+    shownHero.save("CardImage.png","PNG")
+    await ctx.send(file = discord.File("CardImage.png"))  #sends image to discord
+    os.remove("CardImage.png")
+  except:
+    await ctx.send(f"{HeroName} is not the name of a Battle Hero! Use the command **.heroList** to see all Battle Heros names")"""
+
+
+@client.command()
+async def inspect(ctx, HeroName):
+  HeroName = string.capwords(HeroName)
+  CardsList = DL.GetCardsBaseStatList()
+  Hero = None
+  for h in CardsList:
+    if (h[1] == HeroName):
+      Hero = h
+      break
+
+  if (Hero != None):
+    HeroCardIndexNumber = Hero[0]
+    HeroRarity = Hero[2]
+    HeroLore = Hero[4]
+
+    FrameName = BT.GetFrameName(HeroRarity)
+    Card = Image.new("RGBA", (876, 876), (255, 255, 255, 0))
+    cI = Image.open(f"Images/Heroes/{HeroName}.png")
+    fI = Image.open(f"Images/Frames/{FrameName}")
+    cardImage = cI.resize((720, 720))
+    frameImage = fI.resize((876, 876))
+    frameImage.convert("RGBA")
+
+    Card.paste(cardImage, (78, 98))
+    Card.paste(frameImage, (0, 0), frameImage)
+    Card.save(f"Images/TempImages/{HeroName}.png", "PNG")
+
+    #Get Frame Rarity Color Set Numbers#
+    R, G, B = BT.GetRarityColor(HeroRarity)
+
+    file = discord.File(f"Images/TempImages/{HeroName}.png",
+                        filename=f"{HeroName}.png")
+    embed = discord.Embed(title=f"{HeroName}",
+                          description=HeroLore,
+                          color=discord.Color.from_rgb(R, G, B))
+    embed.set_image(url=f"attachment://{HeroName}.png")
+
+    #Send Embed File and Texts & Clean Up#
+    await ctx.send(file=file, embed=embed)
+    os.remove(f"Images/TempImages/{HeroName}.png")
+    ConsolePrint(f"Hero info was printed!", "green")
+  else:
+    await ctx.send(
+      f"{HeroName} is not a valid Battle Hero name! Use the command **.heroList** to see all the available Battle Heros!"
+    )
+    ConsolePrint(f"Hero info was NOT printed!", "red")
 
 
 #-----------------------------------#

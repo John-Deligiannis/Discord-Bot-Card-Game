@@ -8,7 +8,7 @@ connection = sqlite3.connect('Database.db')
 #-----------------------------------#
         #Create & Save Table#
 #-----------------------------------#
-#connection.execute('''DROP TABLE cards_inventory''')
+#connection.execute('''DROP TABLE cards''')
 connection.execute('''CREATE TABLE IF NOT EXISTS users(
   UserID              INT      PRIMARY KEY    NOT NULL,
   EXPAtCurrentLevel   INT      NOT NULL,
@@ -19,8 +19,8 @@ connection.execute('''CREATE TABLE IF NOT EXISTS users(
   CoinBooster         TEXT     NOT NULL);''')
 
 #Card Code / Card Owner UserID / Card Index Number / Rarity (0, 1, 2, 3, 4, 5) / Base Stat (HP, Atk, Def, Magic, Magic Def, Spd) / HeldItems
-connection.execute('''CREATE TABLE IF NOT EXISTS cards_inventory(
-  CardCode          INT      PRIMARY KEY    NOT NULL,
+connection.execute('''CREATE TABLE IF NOT EXISTS cards(
+  CardCode          TEXT     PRIMARY KEY    NOT NULL,
   CardOwnerUserID   INT      NOT NULL,
   CardIndexNumber   INT      NOT NULL,
   BaseStat          TEXT     NOT NULL,

@@ -114,7 +114,7 @@ def SetDefaultData(UserID):
   cursor.execute(f"INSERT INTO users VALUES({UserID}, {0}, {0}, {0}, {0}, '', '');")
   
   #cardList = []
-  cursor.execute(f"INSERT INTO cards_inventory VALUES({UserID});")
+  cursor.execute(f"INSERT INTO cards VALUES({UserID});")
 
   cursor.execute(f"SELECT * FROM users WHERE UserID = {UserID};")
   userStat = cursor.fetchall()
