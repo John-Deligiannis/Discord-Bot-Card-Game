@@ -8,7 +8,9 @@ import sqlite3
 import requests
 import numpy as np
 
+from io import BytesIO
 from termcolor import colored
+from concerns import SubTasks as ST
 from concerns import DataLists as DL
 from PIL import Image, ImageDraw, ImageFont
 #-----------------------------------#
@@ -88,6 +90,7 @@ def GenerateCard(level, rarity, CardIndexNumber, userLevel):
   CardBaseStats = GenerateCardStats(CardIndexNumber)
   return [level, rarity, CardIndexNumber, CardBaseStats]
 #-----------------------------------#
+#-----------------------------------#
 def GetRarityName(rarity):
   if(rarity == 0):
     return "Common"
@@ -128,34 +131,119 @@ def DrawCardFrame(HeroRarity):
   frameImage.convert("RGBA")
 
   return frameImage
+
+
+def GetHPBarColor(HP):
+  if HP > 0.75:
+    return "#7ac078"
+  elif 0.35 < HP < 0.75:
+    return "#d9bd4c"
+  elif HP > 0:
+    return "#d62727"
+  else:
+    return "#23272a"
+    
+
+def DrawBattleScene(HeroCardStats, EnemyCardStats, HeroMaxHP, EnemyMaxHP):
+  HCLevel = HeroCardStats[0]
+  HCRarity = HeroCardStats[1]
+  HCCardIndexNumber = HeroCardStats[2]
+  HCCurrentHP = HeroCardStats[3][0]
+  ECLevel = EnemyCardStats[0]
+  ECRarity = EnemyCardStats[1]
+  ECCardIndexNumber = EnemyCardStats[2]
+  ECCurrentHP = EnemyCardStats[3][0]
+
+  CardsList = DL.GetCardsBaseStatList()
+
+  #Get Card Images#
+  HRequest = requests.get(CardsList[HCCardIndexNumber][5]) # user's hero
+  HCF = DrawCardFrame(HCRarity)
+  ECRequest = requests.get(CardsList[ECCardIndexNumber][5]) # AI enemy
+  ECF = DrawCardFrame(ECRarity)
+  
+  H = Image.open(BytesIO(HRequest.content))
+  CS = Image.open("Images/CrossedSwords.png")
+  EC = Image.open(BytesIO(ECRequest.content))
+  
+  HeroCard = H.resize((720, 720))
+  HeroCardFrame = HCF.resize((876, 876))
+  CSR = CS.resize((360, 360))
+  EnemyCard = EC.resize((720, 720))
+  EnemyCardFrame = ECF.resize((876, 876))
+
+  BattleScene = Image.new("RGBA", (2328, 1076), (255, 255, 255, 0))
+  
+  BattleScene.paste(HeroCard, (78, 298))
+  BattleScene.paste(HeroCardFrame, (0, 200), HeroCardFrame)
+  BattleScene.paste(CSR, (978, 458))
+  BattleScene.paste(EnemyCard, (1518, 298))
+  BattleScene.paste(EnemyCardFrame, (1440, 200), EnemyCardFrame)
+
+  #Heath Bar Set Up#
+  textFont1 = ImageFont.truetype("Fonts/Karla.ttf", 40)
+  textFont2 = ImageFont.truetype("Fonts/FiraSans.ttf", 50)
+  draw = ImageDraw.Draw(BattleScene)
+  startX = 30
+  endX = 700
+
+  #Left Bar
+  percentage = abs(float(HCCurrentHP) / HeroMaxHP)
+  PBSizeX = abs(int(percentage * (endX - startX)))
+  HPColor = GetHPBarColor(percentage)
+  progressBarL = Image.new("RGBA", (PBSizeX, 80), HPColor)
+  progressBarFrameL = Image.new("RGBA", (PBSizeX + 20, 100), "#23272a")
+  BattleScene.paste(progressBarFrameL, (180, 70))
+  BattleScene.paste(progressBarL, (190, 80))
+  #Right Bar
+  percentage = abs(float(ECCurrentHP) / EnemyMaxHP)
+  PBSizeX = abs(int(percentage * (endX - startX)))
+  HPColor = GetHPBarColor(percentage)
+  progressBarL = Image.new("RGBA", (PBSizeX, 80), HPColor)
+  progressBarFrameL = Image.new("RGBA", (PBSizeX + 20, 100), "#23272a")
+  BattleScene.paste(progressBarFrameL, (1445, 70))
+  BattleScene.paste(progressBarL, (1455, 80))
+
+  #Left Circle
+  draw.ellipse((10, 20, 200, 210), fill=(255, 255, 255)) #outer
+  draw.ellipse((20, 30, 190, 200), fill=(35, 39, 42)) #inner
+  #Right Circle
+  draw.ellipse((2100, 20, 2300, 210), fill=(255, 255, 255)) #outer
+  draw.ellipse((2110, 30, 2290, 200), fill=(35, 39, 42)) #inner
+
+  #Hero Texts#
+  draw.text((50, 92.5), (f"LVL {HCLevel}"), font=textFont1, fill=(255, 255, 255), stroke_width=2)
+  draw.text((650, 15), (f"{ST.GetNumberAbbreviation(HCCurrentHP)} / {ST.GetNumberAbbreviation(HeroMaxHP)}"), font=textFont2, stroke_width=2)
+  #Enemy Texts#
+  draw.text((2150, 92.5), (f"LVL {ECLevel}"), font=textFont1, fill=(255, 255, 255), stroke_width=2)
+  draw.text((1450, 15), (f"{ST.GetNumberAbbreviation(ECCurrentHP)} / {ST.GetNumberAbbreviation(EnemyMaxHP)}"), font=textFont2, stroke_width=2)
+
+  BSR = BattleScene.resize((1600, 740))
+  
+  return BSR
 #-----------------------------------#
-def damage(p1, p2, attackType):
+#Battle Functions#
+#-----------------------------------#
+def GetDamage(H1BaseStats, H2BaseStats, attackType):
   #p1 damaging p2
   #HP, Atk, Def, Magic, Magic Def, Spd
-  attackType = "normal"
-  if attackType == "normal":
-    return(p2[2] - (((np.random.choice(np.arange(75,126))))*(p1[1]))*0.01).round(1) #roll +/- 25% on the attack damage
+  if attackType == "physical":
+    return(H2BaseStats[2] - (((np.random.choice(np.arange(75,126))))*(H1BaseStats[1]))*0.01).round(1) #roll +/- 25% on the attack damage
   elif attackType == "magic":
-    return (p2[4] - ((((np.random.choice(np.arange(75,126))))*(p1[3]))*0.01).round(1))
+    return (H2BaseStats[4] - ((((np.random.choice(np.arange(75,126))))*(H1BaseStats[3]))*0.01).round(1))
   else:
     pass
 
-def whoMovesFirst(p1, p2):
-  if p1[-1] > p2[-1]:
+def WhoMovesFirst(p1Speed, p2Speed):
+  if p1Speed > p2Speed:
     return "p1"
-  elif p1[-1] == p2[-1]:
-      if np.random.choice(np.arange(0, 2)) == 1:
-        return "p1"
-      else:
-        return "p2"
-  else:
+  elif p1Speed == p2Speed:
+    if np.random.choice(np.arange(0, 2)) == 1:
+      return "p1"
+    else:
       return "p2"
+  return "p2"
 
-def hpLeft(playerHP, damage):
-  hp = playerHP - damage
-  if hp < 0:
-    return 0
-  else:
-    return hp
-
-
+def HPLeft(HP, damage):
+  return HP - damage
+#-----------------------------------#

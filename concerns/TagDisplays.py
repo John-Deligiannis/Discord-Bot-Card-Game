@@ -6,7 +6,7 @@ from concerns import BattleTasks as BT
 def normalCommands():
   embedVar = discord.Embed(title = "All Standard Commands", color = 0x00ff00)
   embedVar.add_field(
-    name = ".stat <@user>",
+    name = ".viewStats <@user>",
     value = "Print out the stat of the user inputted. If no user is provided, your own stat will be shown.",
     inline = False)
   embedVar.add_field(
@@ -19,7 +19,7 @@ def normalCommands():
     inline = False)
 
   embedVar.add_field(
-    name = ".claim_starter_hero",
+    name = ".claimStarterHero",
     value = "Choose from 3 Battle Heros and start your journey to be the strongest!",
     inline = False)
   embedVar.add_field(
@@ -32,7 +32,15 @@ def normalCommands():
     inline = False)
   embedVar.add_field(
     name = ".shop",
-    value = "Spend your gold on valubles to power up your Battle Heros.",
+    value = "Spend your coins on valubles to power up your Battle Heros.",
+    inline = False)
+  embedVar.add_field(
+    name = ".buy <item>",
+    value = "Purchase an item with coins to power up you Battle Heros.",
+    inline = False)
+  embedVar.add_field(
+    name = ".daily",
+    value = "Redeem a random amount of free coins every 24 hours.",
     inline = False)
   return embedVar
 #-----------------------------------#
@@ -65,11 +73,11 @@ def adminCommands():
     value = "Add/Subtract the number of messages sent from the given user; in accordance to the given integer amount.",
     inline = False)
   embedVar.add_field(
-    name = ".PrintAllUsers",
+    name = ".printAllUsers",
     value = "Print all the users within the database.",
     inline = False)
   embedVar.add_field(
-    name = ".RemoveUser <@user or userID>",
+    name = ".removeUser <@user or userID>",
     value = "Delete a user from the database entirely. BE CAREFUL!",
     inline = False)
 
@@ -79,11 +87,11 @@ def adminCommands():
     inline = False)
 
   embedVar.add_field(
-    name = ".ResetUserStat <@user>",
+    name = ".resetUserStat <@user>",
     value = "Resets the given user's stats.",
     inline = False)
   embedVar.add_field(
-    name = ".ResetUserCardInventory <@user>",
+    name = ".resetUserCardInventory <@user>",
     value = "Resets the given user's entire card inventory.",
     inline = False)
   
