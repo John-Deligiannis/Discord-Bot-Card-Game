@@ -5,10 +5,12 @@ import uuid
 import time
 import random
 import sqlite3
-from termcolor import colored
+import requests
 import numpy as np
 
+from termcolor import colored
 from concerns import DataLists as DL
+from PIL import Image, ImageDraw, ImageFont
 #-----------------------------------#
 def GetCardData(cardStat):
   CardIndexNumber = cardStat[2]
@@ -64,10 +66,10 @@ def RandomGenerateStatNumber(stat):
     return 0
   return stat + c
   
-def GenerateCardStats(cardIndexNumber):
+def GenerateCardStats(CardIndexNumber):
   CardsList = DL.GetCardsBaseStatList()
   #Base Stat (HP, Atk, Def, Magic, Magic Def, Speed)
-  BaseStats = CardsList[cardIndexNumber][3]
+  BaseStats = CardsList[CardIndexNumber][3]
   HP = RandomGenerateStatNumber(BaseStats[0])
   Atk = RandomGenerateStatNumber(BaseStats[1])
   Def = RandomGenerateStatNumber(BaseStats[2])
@@ -76,15 +78,15 @@ def GenerateCardStats(cardIndexNumber):
   Speed = RandomGenerateStatNumber(BaseStats[5])
   return [HP, Atk, Def, Magic, MagicDef, Speed]
 
-def GenerateCard(level, rarity, cardIndexNumber, userLevel):
+def GenerateCard(level, rarity, CardIndexNumber, userLevel):
   if(level == None):
     level = GetEnemyLevel(userLevel)
   if(rarity == None):
     rarity = GetEnemyRarity(userLevel)
-  if(cardIndexNumber == None):
-    cardIndexNumber = GetCardIndexNumber(rarity)
-  CardBaseStats = GenerateCardStats(cardIndexNumber)
-  return level, rarity, cardIndexNumber, CardBaseStats
+  if(CardIndexNumber == None):
+    CardIndexNumber = GetCardIndexNumber(rarity)
+  CardBaseStats = GenerateCardStats(CardIndexNumber)
+  return [level, rarity, CardIndexNumber, CardBaseStats]
 #-----------------------------------#
 def GetRarityName(rarity):
   if(rarity == 0):
@@ -117,20 +119,28 @@ def GetRarityColor(rarity):
   else:
     return 180, 180, 180
 #-----------------------------------#
+def DrawCardFrame(HeroRarity):
+  FrameName = GetFrameName(HeroRarity)
+  Card = Image.new("RGBA", (876, 876), (255, 255, 255, 0))
+
+  fI = Image.open(f"Images/Frames/{FrameName}")
+  frameImage = fI.resize((876, 876))
+  frameImage.convert("RGBA")
+
+  return frameImage
+#-----------------------------------#
 def damage(p1, p2, attackType):
   #p1 damaging p2
   #HP, Atk, Def, Magic, Magic Def, Spd
   attackType = "normal"
-  p1 = [9, 7, 7, 2, 4, 3]
-  p2 = [7, 6, 5, 4, 7, 8]
   if attackType == "normal":
-    return(p2[2] - (((np.random.choice(np.arange(75,126))))*(p1[1]))*0.01).round(1)
-  if attackType == "magic":
+    return(p2[2] - (((np.random.choice(np.arange(75,126))))*(p1[1]))*0.01).round(1) #roll +/- 25% on the attack damage
+  elif attackType == "magic":
     return (p2[4] - ((((np.random.choice(np.arange(75,126))))*(p1[3]))*0.01).round(1))
+  else:
+    pass
 
 def whoMovesFirst(p1, p2):
-  p1 = [9, 3, 7, 2, 2, 3]
-  p2 = [7, 2, 5, 4, 3, 3]
   if p1[-1] > p2[-1]:
     return "p1"
   elif p1[-1] == p2[-1]:

@@ -6,10 +6,6 @@ from concerns import BattleTasks as BT
 def normalCommands():
   embedVar = discord.Embed(title = "All Standard Commands", color = 0x00ff00)
   embedVar.add_field(
-    name = ".herohelp",
-    value = "Print out a list with all the commands needed to navigate Battle Heros.",
-    inline = False)
-  embedVar.add_field(
     name = ".stat <@user>",
     value = "Print out the stat of the user inputted. If no user is provided, your own stat will be shown.",
     inline = False)
@@ -33,6 +29,10 @@ def normalCommands():
   embedVar.add_field(
     name = ".inspect <hero name>",
     value = "Display an image of selected the named Battle Heros.",
+    inline = False)
+  embedVar.add_field(
+    name = ".shop",
+    value = "Spend your gold on valubles to power up your Battle Heros.",
     inline = False)
   return embedVar
 #-----------------------------------#
