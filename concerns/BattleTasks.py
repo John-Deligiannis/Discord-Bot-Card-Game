@@ -3,6 +3,7 @@
 #-----------------------------------#
 import uuid
 import time
+import math
 import random
 import sqlite3
 import requests
@@ -22,25 +23,41 @@ def GetCardData(cardStat):
   return [CardIndexNumber, BaseStat, HeldItem1, HeldItem2]
 
 def CreateCardCode(string_length = 6):
-    random = str(uuid.uuid4()) # Convert UUID format to a Python string.
-    random = random.upper() # Make all characters uppercase.
-    random = random.replace("-", "") # Remove the UUID '-'.
-    return random[0:string_length] # Return the random string.
+  connection = sqlite3.connect("Database.db")
+  cursor = connection.cursor()
+
+  while True:
+    RandomCode = str(uuid.uuid4()) # Convert UUID format to a Python string.
+    RandomCode = RandomCode.upper() # Make all characters uppercase.
+    RandomCode = RandomCode.replace("-", "") # Remove the UUID '-'.
+
+    cursor.execute(f"SELECT * FROM cards WHERE CardCode = '{RandomCode}';")
+    cards = cursor.fetchall()
+    
+    if(len(cards) == 0):
+      connection.close()
+      return RandomCode[0:string_length] # Return the random string.
 #-----------------------------------#
 def GetEnemyRarity(userLevel):
-  #Common% / Uncommon% / Rare% / Legendary%
+  #Common% / Uncommon% / Rare% / Epic% / Legendary%
   raritySpawn = []
   
   if(0 <= userLevel <= 5):
-    raritySpawn = [0.95, 0.05, 0, 0]
+    raritySpawn = [0.85, 0.13, 0.01, 0.01, 0.00]
   elif(6 <= userLevel <= 15):
-    raritySpawn = [0.74, 0.20, 0.05, 0.01]
+    raritySpawn = [0.70, 0.20, 0.05, 0.04, 0.01]
   elif(16 <= userLevel <= 30):
-    raritySpawn = [0.50, 0.30, 0.15, 0.05]
-  else:
-    raritySpawn = [0.20, 0.35, 0.30, 0.15]
+    raritySpawn = [0.35, 0.40, 0.15, 0.08, 0.02]
+  elif(31 <= userLevel <= 50):
+    raritySpawn = [0.20, 0.25, 0.30, 0.15, 0.10]
+  elif(51 <= userLevel <= 80):
+    raritySpawn = [0.10, 0.15, 0.25, 0.30, 0.20]
+  elif(81 <= userLevel <= 150):
+    raritySpawn = [0.05, 0.08, 0.07, 0.30, 0.50]
+  else: #lvl 150+
+    raritySpawn = [0.01, 0.04, 0.05, 0.20, 0.70]
 
-  rarity = np.random.choice(np.arange(0, 4), p = [raritySpawn[0], raritySpawn[1], raritySpawn[2], raritySpawn[3]])
+  rarity = np.random.choice(np.arange(0, 5), p = [raritySpawn[0], raritySpawn[1], raritySpawn[2], raritySpawn[3], raritySpawn[4]])
   return rarity
 
 def GetEnemyLevel(userLevel):
@@ -62,22 +79,22 @@ def GetCardIndexNumber(rarity):
   return np.random.choice(np.arange(startIndex, endIndex))
 
 
-def RandomGenerateStatNumber(stat):
+def RandomGenerateStatNumber(stat, CardLevel):
   c = np.random.choice(np.arange(-5,5))
   if(stat + c < 0):
-    return 0
-  return stat + c
+    return 0 
+  return stat + c + (CardLevel*5)
   
-def GenerateCardStats(CardIndexNumber):
+def GenerateCardStats(CardIndexNumber, CardLevel):
   CardsList = DL.GetCardsBaseStatList()
   #Base Stat (HP, Atk, Def, Magic, Magic Def, Speed)
   BaseStats = CardsList[CardIndexNumber][3]
-  HP = RandomGenerateStatNumber(BaseStats[0])
-  Atk = RandomGenerateStatNumber(BaseStats[1])
-  Def = RandomGenerateStatNumber(BaseStats[2])
-  Magic = RandomGenerateStatNumber(BaseStats[3])
-  MagicDef = RandomGenerateStatNumber(BaseStats[4])
-  Speed = RandomGenerateStatNumber(BaseStats[5])
+  HP = RandomGenerateStatNumber(BaseStats[0], CardLevel)
+  Atk = RandomGenerateStatNumber(BaseStats[1], CardLevel)
+  Def = RandomGenerateStatNumber(BaseStats[2], CardLevel)
+  Magic = RandomGenerateStatNumber(BaseStats[3], CardLevel)
+  MagicDef = RandomGenerateStatNumber(BaseStats[4], CardLevel)
+  Speed = RandomGenerateStatNumber(BaseStats[5], CardLevel)
   return [HP, Atk, Def, Magic, MagicDef, Speed]
 
 def GenerateCard(level, rarity, CardIndexNumber, userLevel):
@@ -87,10 +104,14 @@ def GenerateCard(level, rarity, CardIndexNumber, userLevel):
     rarity = GetEnemyRarity(userLevel)
   if(CardIndexNumber == None):
     CardIndexNumber = GetCardIndexNumber(rarity)
-  CardBaseStats = GenerateCardStats(CardIndexNumber)
+  CardBaseStats = GenerateCardStats(CardIndexNumber, level)
   return [level, rarity, CardIndexNumber, CardBaseStats]
 #-----------------------------------#
 #-----------------------------------#
+def GetCardRarity(CardIndexNumber):
+  CardsList = DL.GetCardsBaseStatList()
+  return CardsList[CardIndexNumber][2]
+
 def GetRarityName(rarity):
   if(rarity == 0):
     return "Common"
@@ -144,7 +165,7 @@ def GetHPBarColor(HP):
     return "#23272a"
     
 
-def DrawBattleScene(HeroCardStats, EnemyCardStats, HeroMaxHP, EnemyMaxHP):
+def DrawBattleScene(HeroCardStats, EnemyCardStats, HeroMaxHP, EnemyMaxHP):  
   HCLevel = HeroCardStats[0]
   HCRarity = HeroCardStats[1]
   HCCardIndexNumber = HeroCardStats[2]
@@ -228,12 +249,22 @@ def GetDamage(H1BaseStats, H2BaseStats, attackType):
   #p1 damaging p2
   #HP, Atk, Def, Magic, Magic Def, Spd
   if attackType == "physical":
-    return(H2BaseStats[2] - (((np.random.choice(np.arange(75,126))))*(H1BaseStats[1]))*0.01).round(1) #roll +/- 25% on the attack damage
+    dmgResult = (((((np.random.choice(np.arange(85,116))))*(H1BaseStats[1]))*0.01).round(1)) - H2BaseStats[2]
+    print(dmgResult)
+    if dmgResult < 0:
+      return 0
+    else:
+      return dmgResult
+    return #roll +/- 25% on the attack damage
   elif attackType == "magic":
-    return (H2BaseStats[4] - ((((np.random.choice(np.arange(75,126))))*(H1BaseStats[3]))*0.01).round(1))
-  else:
-    pass
+    dmgResult = (((((np.random.choice(np.arange(85,116))))*(H1BaseStats[3]))*0.01).round(1)) - H2BaseStats[4]
+    print(dmgResult)
+    if dmgResult < 0:
+      return 0
+    else:
+      return dmgResult
 
+    
 def WhoMovesFirst(p1Speed, p2Speed):
   if p1Speed > p2Speed:
     return "p1"
@@ -245,5 +276,54 @@ def WhoMovesFirst(p1Speed, p2Speed):
   return "p2"
 
 def HPLeft(HP, damage):
-  return HP - damage
+  if (HP - damage) <= 0:
+    return 0
+  else:
+    return HP - damage
+#-----------------------------------#
+def BattleEXPReward(CardStats):
+  CardLevel = CardStats[0]
+  CardRarity = CardStats[1]
+  EXPReward = 0
+
+  #Card Rarity Reward#
+  EXPReward = (100*(CardRarity**2) + CardRarity + 10)
+  #Card Level Reward#
+  EXPReward += (CardLevel**(1*(CardRarity/5) + 2.0))
+  
+  return math.ceil(EXPReward)
+
+  
+def BattleCoinReward(CardStats):
+  CardLevel = CardStats[0]
+  CardRarity = CardStats[1]
+  CoinReward = 0
+
+  #Card Rarity Reward#
+  CoinReward = (50*(CardRarity**2) + CardRarity + 10)/2
+  #Card Level Reward#
+  CoinReward += (CardLevel**(1*(CardRarity/5) + 1.25))/2
+  
+  return math.ceil(CoinReward)
+
+
+def GetBurntCardReward(CardStats):
+  print(CardStats)
+  CardLevel = CardStats[3]
+  CardIndexNumber = CardStats[2]
+  CardRarity = GetCardRarity(CardIndexNumber)
+  CoinReward = 0
+
+  #Card Rarity Reward#
+  CoinReward = 50*(CardRarity**2) + CardRarity + 10
+  #Card Level Reward#
+  CoinReward += CardLevel**(1*(CardRarity/5) + 1.25)
+  
+  return CoinReward
+
+
+def GetUpgradeCost(CardLevel, CardRarity):
+  UpgradeCost = CardLevel*20
+  UpgradeCost += 10*(CardRarity**2) + CardRarity + 10
+  return UpgradeCost
 #-----------------------------------#

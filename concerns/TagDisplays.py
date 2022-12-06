@@ -14,13 +14,24 @@ def normalCommands():
     value = "Print out the top 10 ranking list based on levels.",
     inline = False)
   embedVar.add_field(
-    name = ".transactCoins <@recieverUserID> <amount of coins>",
+    name = ".instructions",
+    value = "How to Play page pops up",
+    inline = False)
+  embedVar.add_field(
+    name = ".transactCoins <@receiverUserID> <amount of coins>",
     value = "Transact coin balance with another user. Please ensure that the coinAmount is > 0.",
     inline = False)
-
   embedVar.add_field(
     name = ".claimStarterHero",
     value = "Choose from 3 Battle Heros and start your journey to be the strongest!",
+    inline = False)
+  embedVar.add_field(
+    name = ".selectHero",
+    value = "Select 1 of your Heros to participate in battle",
+    inline = False)
+  embedVar.add_field(
+    name = ".battle",
+    value = "Starts a battle with a randomly generated AI Enemy",
     inline = False)
   embedVar.add_field(
     name = ".heroList",
@@ -42,11 +53,15 @@ def normalCommands():
     name = ".daily",
     value = "Redeem a random amount of free coins every 24 hours.",
     inline = False)
+  embedVar.add_field(
+    name = ".viewCardInventory",
+    value = "View the cards currently in your inventory.",
+    inline = False)
   return embedVar
 #-----------------------------------#
 def adminCommands():
   embedVar = discord.Embed(title = "All Admin Commands", color = 0x00ff00)
-
+  """
   embedVar.add_field(
     name = ".mute <@user>",
     value = "Mute the given user.",
@@ -59,7 +74,7 @@ def adminCommands():
     name = ".muteList",
     value = "Print out all the muted users at the moment.",
     inline = False)
-
+  """
   embedVar.add_field(
     name = ".changeEXP <@user> <integer amount>",
     value = "Add/Subtract EXP points for the given user; in accordance to the given integer amount.",
