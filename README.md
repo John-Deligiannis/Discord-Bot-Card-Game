@@ -1,2 +1,2 @@
 # Battle-Heroes-V2
-Bot prefix is set to "b"
+Bot prefix is set to "."
