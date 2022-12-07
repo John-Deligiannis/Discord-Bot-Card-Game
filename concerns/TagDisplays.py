@@ -57,6 +57,10 @@ def normalCommands():
     name = ".viewCardInventory",
     value = "View the cards currently in your inventory.",
     inline = False)
+  embedVar.add_field(
+    name = ".upgrade <card code>",
+    value = "Upgrade the specified card with coins.",
+    inline = False)
   return embedVar
 #-----------------------------------#
 def adminCommands():

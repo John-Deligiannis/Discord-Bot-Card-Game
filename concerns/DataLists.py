@@ -2,7 +2,7 @@
             #Importations#
 #-----------------------------------#
 #Card Index Number / Card Name / Rarity (0, 1, 2, 3, 4) / Base Stat: [HP, Atk, Def, Magic, Magic Def, Speed] / Lore Text / Image URL Link
-"""JD"""
+"JD"  
 CardsBaseList = [
   [0, "Valkyrie", 0, [9, 7, 3, 2, 1, 3], "The generals in Xalt's army are made up of these fearless warriors. The Valkyries will charge into battle no questions asked and decimate the enemy.", "https://media.discordapp.net/attachments/1046648177853468703/1046652353601884232/unknown.png"],
   [1, "Kotaro", 0, [7, 6, 2, 4, 2, 8],"A modern day ninja and robin hood. Kotaro enjoys playing Pokémon Go! and watching TikTok.", "https://media.discordapp.net/attachments/1046648177853468703/1046797991429820496/unknown.png"],

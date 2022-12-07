@@ -3,8 +3,10 @@
 #-----------------------------------#
 """- SM, Sonny Ma, 20998850
   - JD, John Deligiannis 21031687
-  - BH, Brayden Herbert, 20999228
-  - DS, Dhruv Shah, 21023078"""
+  - BH, Brayden Herbert, 20999228, https://github.com/BraydenHerbert/NE-111
+  - DS, Dhruv Shah, 21023078
+  GitHub Link - https://github.com/RealClassyClass/Battle-Heroes-V2 
+  """
 import os
 import re
 import time
@@ -262,7 +264,9 @@ async def instructions(ctx):
   Command: .AddRandomizedCardToInventory
   Purpose - Random Card Generator with Random Stats
   - SM
+  - BH
 """
+
 def AddRandomizedCardToInventory(UserID, CardIndexNumber):
   #Connects to database and read data
   connection = sqlite3.connect("Database.db")
@@ -755,6 +759,7 @@ async def battle(ctx):
     Command: .inspect
     Purpose - Allows user to individually inspect a hero (contains same info as .heroList but less messy)
     - JD
+    - BH
   """
 @client.command()
 async def inspect(ctx, *args):
@@ -813,6 +818,7 @@ async def inspect(ctx, *args):
   Purpose - UI that allows you to see what items are on sale and for what price
   -BH
 """
+#Brayden Herbert
 @client.command()
 async def shop(ctx):
   #Embed
@@ -1090,7 +1096,8 @@ async def transactCoins(ctx, receiverUserID, coinAmount):
   Purpose - Allows user to gain Daily Login Rewards
   Issues - The daily part doesn't work as our bot isn't running 24/7 so the daily counter isn't possible unless we run the bot from a paid 24/7 hosting server. This feature can be spammed once the bot logs in.
   - BH
-"""    
+"""   
+
 @client.command()
 async def daily(ctx):
   user = ctx.author
@@ -1139,7 +1146,7 @@ async def daily(ctx):
 @client.command()
 async def viewCardInventory(ctx):
   user = ctx.author
-  
+  "JD and SM"
   #Connect to database and read data
   connection = sqlite3.connect("Database.db")
   cursor = connection.cursor()
@@ -1505,9 +1512,6 @@ async def removeUser(ctx, userID):
   connection = sqlite3.connect("Database.db")
   cursor = connection.cursor()
   cursor.execute(f"DELETE FROM users WHERE UserID = {userID}")
-  
-  connection = sqlite3.connect("Database.db")
-  cursor = connection.cursor()
   cursor.execute(f"DELETE FROM cards WHERE UserID = {userID}")
 
   #Commit changes to the database
@@ -1598,6 +1602,7 @@ async def botTalk(ctx, *args):
   Command: .help
   Purpose: Sends out a printed list of the specifications of basic user commands.
   - SM
+  - BH
 """
 @client.command()
 async def help(ctx):
