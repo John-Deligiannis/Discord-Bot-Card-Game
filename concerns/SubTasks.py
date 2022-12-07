@@ -15,6 +15,7 @@ def IsAdmin(userRoles):
       return True
   return False
 #-----------------------------------#
+#Given a large number, return the appropriate letter abbreviation.
 def GetNumberAbbreviation(n):
   if n < 1000:
     return str(n)
@@ -27,6 +28,7 @@ def GetNumberAbbreviation(n):
   else:
     return str(n//1000000000000) + "T"
 #-----------------------------------#
+#Based on player level change, determine the coin reward for leveling up
 def GetLevelUpCoinReward(originalLevel, newLevel):
   if originalLevel != newLevel:
     collectiveCoins = 0
@@ -35,6 +37,7 @@ def GetLevelUpCoinReward(originalLevel, newLevel):
     return collectiveCoins
   return 0
 #-----------------------------------#
+#determine EXP gain for sending messages in discord chat.
 def CalculateForChatEXP(wordCount):
   return random.randint(round(wordCount/2), wordCount + round(wordCount/4))
 #-----------------------------------#
@@ -107,6 +110,7 @@ def CalculateForCCCCoinReward(PointsScored, TotalPoints, PreviousCompletionValue
   TotalCoinReward = (TotalPoints ** 2) - (TotalPoints ** 1.85) + (13 ** (TotalPoints//10)) #coin reward formula
   return CalculateForReward(PointsScored, TotalPoints, PreviousCompletionValue, TotalCoinReward)
 #-----------------------------------#
+#Upon a new player joining the server, add a new entry to the database corresponding to them.
 def SetDefaultData(UserID):
   connection = sqlite3.connect("Database.db")
   cursor = connection.cursor()
@@ -124,13 +128,16 @@ def SetDefaultData(UserID):
 
   return userStat
 #-----------------------------------#
+#Configurations for discord
 def GetBotChannelID(ServerName):
   if ServerName == "Test Server":
     return 869696625017229432
   elif ServerName == "Fallen Hope: Battle Heroes":
-    return 1044473570425847878
+    return 1044473570425847878  
   elif ServerName[:7] == "The SCU":
     return 833831903878053908
+  elif ServerName == "Battle Heroes Bot Submission":
+    return 1049413633202978938
   return None
 #-----------------------------------#
 #Database contains data from every server, the following cuts out users of which are not associated with the server that the command is ran on#

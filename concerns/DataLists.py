@@ -2,6 +2,7 @@
             #Importations#
 #-----------------------------------#
 #Card Index Number / Card Name / Rarity (0, 1, 2, 3, 4) / Base Stat: [HP, Atk, Def, Magic, Magic Def, Speed] / Lore Text / Image URL Link
+"""JD"""
 CardsBaseList = [
   [0, "Valkyrie", 0, [9, 7, 3, 2, 1, 3], "The generals in Xalt's army are made up of these fearless warriors. The Valkyries will charge into battle no questions asked and decimate the enemy.", "https://media.discordapp.net/attachments/1046648177853468703/1046652353601884232/unknown.png"],
   [1, "Kotaro", 0, [7, 6, 2, 4, 2, 8],"A modern day ninja and robin hood. Kotaro enjoys playing Pokémon Go! and watching TikTok.", "https://media.discordapp.net/attachments/1046648177853468703/1046797991429820496/unknown.png"],
@@ -20,10 +21,10 @@ CardsBaseList = [
   [14, "Edgerunner", 3, [33, 26, 13, 31, 15, 26],"In a corrput world, one must be equally corrupt. At least that's how the Edgerunners justify their actions. Raiding local buisnesses, pillaging people on the street, dealing illict drugs, the Edgerunners are a force to be reckoned with.", "https://media.discordapp.net/attachments/1046648177853468703/1046653061646516234/unknown.png"],
   [15, "Cyblade", 3, [31, 29, 15, 28, 13, 24],"Born in the year 3022, Kanye East was born. He likes technology. Thats it.", "https://media.discordapp.net/attachments/1046648177853468703/1046801025216020571/unknown.png"],
   [16, "Anubis", 3, [34, 30, 29, 27, 15, 23],"An abomination born during the age of the Black Death. When not in a special containment suit, it will infect anything it comes in contact with. Spends its days working to cure its curse. It just wants to be normal and have real friends.", "https://media.discordapp.net/attachments/1046648177853468703/1046809776585195562/unknown.png"],
-  [17, "Pyralis", 4, [45, 40, 28, 51, 28, 26],"A child of the flame. Some say that when he was younger his family did't have to pay to heat their house. Everyones best friend in the winter. Banned from glacial parks. May or may not be the largest factor of global warming.", "https://media.discordapp.net/attachments/1046648177853468703/1046650494778622042/unknown.png"],
+  [17, "Pyralis", 4, [45, 40, 28, 51, 28, 26],"A child of the flame. Some say that when he was younger his family didn't have to pay to heat their home. Everyone's best friend in the winter. Banned from glacial parks. May or may not be the largest factor of global warming.", "https://media.discordapp.net/attachments/1046648177853468703/1046650494778622042/unknown.png"],
   [18, "Kotoshi", 4, [42, 39, 31, 49, 32, 30],"An ancient samurai with the ability wield the shadows through his sword who will destory anyone in his path.", "https://media.discordapp.net/attachments/1046648177853468703/1046650848442318928/unknown.png"],
   [19, "Lunar Praetorian", 4, [45, 38, 33, 47, 29, 28],"Guardian of the Interstellar Staff of Life. Waits silentily in its sanctuary, ready to thwart anything theatening its peace.", "https://media.discordapp.net/attachments/1046648177853468703/1046805456728899634/unknown.png"]
-    ]
+    ] 
 #-----------------------------------#
             #Functions#
 #-----------------------------------#

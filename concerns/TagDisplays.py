@@ -26,7 +26,7 @@ def normalCommands():
     value = "Choose from 3 Battle Heros and start your journey to be the strongest!",
     inline = False)
   embedVar.add_field(
-    name = ".selectHero",
+    name = ".selectHero <card code>",
     value = "Select 1 of your Heros to participate in battle",
     inline = False)
   embedVar.add_field(
@@ -102,7 +102,7 @@ def adminCommands():
     inline = False)
 
   embedVar.add_field(
-    name = ".resetUserStat <@user>",
+    name = ".resetUserStats <@user>",
     value = "Resets the given user's stats.",
     inline = False)
   embedVar.add_field(

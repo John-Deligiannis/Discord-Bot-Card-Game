@@ -22,6 +22,7 @@ def GetCardData(cardStat):
   HeldItem2 = int(cardStat[5])
   return [CardIndexNumber, BaseStat, HeldItem1, HeldItem2]
 
+#Creates a random code to input to the data base.
 def CreateCardCode(string_length = 6):
   connection = sqlite3.connect("Database.db")
   cursor = connection.cursor()
@@ -38,6 +39,7 @@ def CreateCardCode(string_length = 6):
       connection.close()
       return RandomCode[0:string_length] # Return the random string.
 #-----------------------------------#
+#Given a player's level, determine the % chance of each rarity of card to spawn.
 def GetEnemyRarity(userLevel):
   #Common% / Uncommon% / Rare% / Epic% / Legendary%
   raritySpawn = []
@@ -60,12 +62,13 @@ def GetEnemyRarity(userLevel):
   rarity = np.random.choice(np.arange(0, 5), p = [raritySpawn[0], raritySpawn[1], raritySpawn[2], raritySpawn[3], raritySpawn[4]])
   return rarity
 
+# Given the players level, determine an approprate level for an enemy
 def GetEnemyLevel(userLevel):
   level = np.random.choice(np.arange(-5, 5))
   if(userLevel + level < 0):
     return 0
   return userLevel + level
-
+    
 def GetCardIndexNumber(rarity):
   CardsList = DL.GetCardsBaseStatList()
   startIndex = None
@@ -79,12 +82,14 @@ def GetCardIndexNumber(rarity):
   return np.random.choice(np.arange(startIndex, endIndex))
 
 
+#Generate a stat with variations.
 def RandomGenerateStatNumber(stat, CardLevel):
   c = np.random.choice(np.arange(-5,5))
   if(stat + c < 0):
-    return 0 
+    return 1
   return stat + c + (CardLevel*5)
-  
+
+#Uses previous function to generate a random set of all a card's battle stats
 def GenerateCardStats(CardIndexNumber, CardLevel):
   CardsList = DL.GetCardsBaseStatList()
   #Base Stat (HP, Atk, Def, Magic, Magic Def, Speed)
@@ -97,6 +102,7 @@ def GenerateCardStats(CardIndexNumber, CardLevel):
   Speed = RandomGenerateStatNumber(BaseStats[5], CardLevel)
   return [HP, Atk, Def, Magic, MagicDef, Speed]
 
+# Returns a complete list of a card's stats, inlcuding non battle related stats
 def GenerateCard(level, rarity, CardIndexNumber, userLevel):
   if(level == None):
     level = GetEnemyLevel(userLevel)
@@ -105,13 +111,17 @@ def GenerateCard(level, rarity, CardIndexNumber, userLevel):
   if(CardIndexNumber == None):
     CardIndexNumber = GetCardIndexNumber(rarity)
   CardBaseStats = GenerateCardStats(CardIndexNumber, level)
+  print("Stats", CardBaseStats)
   return [level, rarity, CardIndexNumber, CardBaseStats]
 #-----------------------------------#
 #-----------------------------------#
+#Given a card's index number(refrenced from file DataLists) return the rarity associated with that base card
 def GetCardRarity(CardIndexNumber):
   CardsList = DL.GetCardsBaseStatList()
   return CardsList[CardIndexNumber][2]
 
+#convert numerical rariity to written form
+"JD"
 def GetRarityName(rarity):
   if(rarity == 0):
     return "Common"
@@ -125,10 +135,12 @@ def GetRarityName(rarity):
     return "Legendary"
   else:
     return "Common"
-    
+
+#Given a card's rarity, return the name of the file of the appropriate card frame. Frames can be found in Images/Frames
 def GetFrameName(rarity):
   return GetRarityName(rarity) + "Frame.png"
 
+#Reutns a colour value associated with each rarity value.
 def GetRarityColor(rarity):
   if(rarity == 0):
     return 180, 180, 180
@@ -143,6 +155,7 @@ def GetRarityColor(rarity):
   else:
     return 180, 180, 180
 #-----------------------------------#
+#Resizes and draws the appropriate frame
 def DrawCardFrame(HeroRarity):
   FrameName = GetFrameName(HeroRarity)
   Card = Image.new("RGBA", (876, 876), (255, 255, 255, 0))
@@ -153,7 +166,8 @@ def DrawCardFrame(HeroRarity):
 
   return frameImage
 
-
+#Given a card's current HP, return the colour of the HP bar.
+"SM"
 def GetHPBarColor(HP):
   if HP > 0.75:
     return "#7ac078"
@@ -165,6 +179,8 @@ def GetHPBarColor(HP):
     return "#23272a"
     
 
+#Draw the battle scene/discord embed.
+"SM"
 def DrawBattleScene(HeroCardStats, EnemyCardStats, HeroMaxHP, EnemyMaxHP):  
   HCLevel = HeroCardStats[0]
   HCRarity = HeroCardStats[1]
@@ -245,26 +261,30 @@ def DrawBattleScene(HeroCardStats, EnemyCardStats, HeroMaxHP, EnemyMaxHP):
 #-----------------------------------#
 #Battle Functions#
 #-----------------------------------#
+#Given each card's stats, return the damage done after taking defence into account. Defence is subratcted from attack.
 def GetDamage(H1BaseStats, H2BaseStats, attackType):
+  "JD"
   #p1 damaging p2
   #HP, Atk, Def, Magic, Magic Def, Spd
   if attackType == "physical":
-    dmgResult = (((((np.random.choice(np.arange(85,116))))*(H1BaseStats[1]))*0.01).round(1)) - H2BaseStats[2]
+    #Apply a random +/-15% value to the damage 
+    dmgResult = (((((np.random.choice(np.linspace(0.85,1.15,100))))*(H1BaseStats[1]))).round(1)) - H2BaseStats[2]
     print(dmgResult)
     if dmgResult < 0:
       return 0
     else:
       return dmgResult
-    return #roll +/- 25% on the attack damage
+    return #roll +/- 15% on the attack damage
   elif attackType == "magic":
-    dmgResult = (((((np.random.choice(np.arange(85,116))))*(H1BaseStats[3]))*0.01).round(1)) - H2BaseStats[4]
+    dmgResult = (((((np.random.choice(np.linspace(0.85,1.15))))*(H1BaseStats[3]))).round(1)) - H2BaseStats[4]
     print(dmgResult)
     if dmgResult < 0:
       return 0
     else:
       return dmgResult
 
-    
+#based on card speed, determine who attacks first.
+"JD"
 def WhoMovesFirst(p1Speed, p2Speed):
   if p1Speed > p2Speed:
     return "p1"
@@ -275,12 +295,14 @@ def WhoMovesFirst(p1Speed, p2Speed):
       return "p2"
   return "p2"
 
+#Given damage and HP of the cards, determine the remaining card hp.
 def HPLeft(HP, damage):
-  if (HP - damage) <= 0:
+  if (HP - damage) < 0:
     return 0
   else:
     return HP - damage
 #-----------------------------------#
+#Based on card rarity and level, determine player EXP reward
 def BattleEXPReward(CardStats):
   CardLevel = CardStats[0]
   CardRarity = CardStats[1]
@@ -293,7 +315,7 @@ def BattleEXPReward(CardStats):
   
   return math.ceil(EXPReward)
 
-  
+#Based on card rarity and level, determine coin reward
 def BattleCoinReward(CardStats):
   CardLevel = CardStats[0]
   CardRarity = CardStats[1]
@@ -306,7 +328,7 @@ def BattleCoinReward(CardStats):
   
   return math.ceil(CoinReward)
 
-
+#Based on card rarity and level, determine reward for burning a card
 def GetBurntCardReward(CardStats):
   print(CardStats)
   CardLevel = CardStats[3]
@@ -322,6 +344,7 @@ def GetBurntCardReward(CardStats):
   return CoinReward
 
 
+#Based on card rarity and level, determine cost of upgrading a card
 def GetUpgradeCost(CardLevel, CardRarity):
   UpgradeCost = CardLevel*20
   UpgradeCost += 10*(CardRarity**2) + CardRarity + 10

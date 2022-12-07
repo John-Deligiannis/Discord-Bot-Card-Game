@@ -1,6 +1,10 @@
-#-----------------------------------#
+#-----------------------------------#F
 #Importations#
 #-----------------------------------#
+"""- SM, Sonny Ma, 20998850
+  - JD, John Deligiannis 21031687
+  - BH, Brayden Herbert, 20999228
+  - DS, Dhruv Shah, 21023078"""
 import os
 import re
 import time
@@ -81,7 +85,7 @@ async def viewStats(ctx, user: discord.Member = None):
     pfp = pfp.resize((128, 128))
 
     #Stat Template
-    UserStatsImage = Image.open("Images/UserStatsTemplate.png")
+    UserStatsImage = Image.open("Images/UserStatTemplate.png")
     UserStatsImage.paste(pfp, (20, 10))
 
     #PFPCut
@@ -243,7 +247,7 @@ async def leaderboard(ctx):
 """
   Command: .instructions
   Purpose - Prints a short instructions manual on how to play and on the basic commands to how to start playing the game.
-  - DS
+  - DS, Dhruv Shah, 21023078
   """
 @client.command()
 async def instructions(ctx):
@@ -296,6 +300,7 @@ def AddRandomizedCardToInventory(UserID, CardIndexNumber):
 """
   Command: .AddEnemyCardToInventory
   Purpose - When defeating an AI enemy in .battle, you capture the enemy card, which means that the enemy card gets added to your card inventory.
+  - SM
 """
 def AddEnemyCardToInventory(UserID, CardStats):
   #Connects to database and read data
@@ -311,7 +316,7 @@ def AddEnemyCardToInventory(UserID, CardStats):
   CardIndexNumber = CardStats[2]
   CardBaseStats = CardStats[3]
   CardStats = BT.GenerateCard(CardLevel, CardRarity, CardIndexNumber, None)
-  
+  startingHP = CardStats[[3][0]]
   #String of Card Base Stats
   CBSString = "/".join(str(s) for s in CardBaseStats)
 
@@ -337,6 +342,7 @@ class claimStarterView(View):
   Documentation:
 
   Purpose - Creates a object-orientated class for the view when claiming a starter card, used to implement buttons into code
+  - Dhruv Shah, DS, 21023078
   """
   
   def __init__(self, ctx, button1, button2, button3):
@@ -414,7 +420,7 @@ class claimStarterView(View):
 """
   Command: .claimStarterHero
   Purpose - Allows User to claim their very first hero to battle with!
-  - DS
+  - Dhruv Shah, DS, 21023078
 """
 @client.command()
 async def claimStarterHero(ctx):
@@ -492,7 +498,7 @@ async def claimStarterHero(ctx):
 """
   Command: .selectHero
   Purpose - Allows User to select 1 of their heroes they own to set on deck and use in future battles, also used to switch which hero is on deck if user has multiple heroes.
-  - DS
+  - Dhruv Shah, DS, 21023078
 """
 @client.command()
 async def selectHero(ctx, cardCode):
@@ -659,6 +665,7 @@ async def battle(ctx):
           if(EnemyHP <= 0): #When enemy HP drops to or below 0
             EnemyHP = 0
             winStatus = 1
+            #EnemyHP = 0
             
           HeroHP = round(BT.HPLeft(HeroBaseStats[0], EnemyDamage), 2)
           HeroBaseStats[0] = HeroHP        
@@ -690,7 +697,9 @@ async def battle(ctx):
     #Output results
     if (winStatus == 1): #If user wins
       #Captures enemy
+      EnemyCardStats[3][0] = EnemyMaxHP #reset hero HP
       AddEnemyCardToInventory(user.id, EnemyCardStats)
+      print("hi", EnemyCardStats)
       ConsolePrint(f"{client.get_user(user.id)} won!", "green")
       await ctx.send(f"<@{user.id}> has captured the enemy!")
       
@@ -742,14 +751,13 @@ async def battle(ctx):
 #-----------------------------------#
 #Main Commands#
 #-----------------------------------#
+  """
+    Command: .inspect
+    Purpose - Allows user to individually inspect a hero (contains same info as .heroList but less messy)
+    - JD
+  """
 @client.command()
 async def inspect(ctx, *args):
-  """
-  Documentation:
-
-  Purpose - Allows user to individually inspect a hero (contains same info as .heroList but less messy)
-  """
-
   #Searching for hero
   HeroName = " ".join(str(x) for x in args)
   HeroName = string.capwords(HeroName)
@@ -800,14 +808,13 @@ async def inspect(ctx, *args):
     ConsolePrint(f"Hero info was NOT printed!", "red")
 
 
+"""
+  Command: .shop
+  Purpose - UI that allows you to see what items are on sale and for what price
+  -BH
+"""
 @client.command()
 async def shop(ctx):
-  """
-  Documentation:
-
-  Purpose - UI that allows you to see what items are on sale and for what price
-  """
-
   #Embed
   embed=discord.Embed(title="Browse Item Shop", description="Spend your gold on valubles to power up your Battle Heros!", color=0x109319)
   #Shop Image
@@ -920,34 +927,36 @@ async def burn(ctx, cardID):
   UserCards = cursor.fetchall()
   cursor.execute(f"SELECT * FROM users WHERE UserID = {user.id};")
   UserStats = cursor.fetchall()[0]
-
+  #Creates buttons 
   button1 = Button(label = "❌", custom_id = "button1", style = discord.ButtonStyle.grey)
   button2 = Button(label = "✅", custom_id = "button2", style = discord.ButtonStyle.grey)
+  #60 secs timeout
   view = View(timeout=60)
   view.add_item(button1)
   view.add_item(button2)
-  
+  #Checks if user has cards to burn
   if(len(UserCards) > 0):
     CardStats = UserCards[0]
     CardCode = CardStats[0]
     CardOwner = CardStats[1]
     UserCoins = UserStats[3]
-    
+    #Rewards for burning
     if(CardOwner == user.id):
       cursor.execute(f"DELETE FROM cards WHERE CardCode = '{cardID}'")
       CoinReward = BT.GetBurntCardReward(CardStats)
       cursor.execute(f"UPDATE users SET Coins = '{UserCoins + CoinReward}' WHERE UserID = {user.id}")
-      
+      #Confirm burn
       await ctx.send("Do you want to burn this card?", view=view)
       interactionEvent = await client.wait_for('interaction', timeout = 60, check=lambda interaction: interaction.data["component_type"] == 2 and "custom_id" in interaction.data.keys())
       
-      if(interactionEvent.data["custom_id"] == "button2"):
-        await ctx.send(f"<@{user.id}>, `{CardCode}` has been burnt! You recieved {CoinReward} as compensation!")
-        ConsolePrint(f"{client.get_user(user.id)} successfully burnt {CardCode} coins and recieved {CoinReward} as compensation!", "green")
-      elif(interactionEvent.data["custom_id"] == "button1"):
+      if(interactionEvent.data["custom_id"] == "button2"): #Prints successful burn
+        await ctx.send(f"<@{user.id}>, `{CardCode}` has been burnt! You recieved {CoinReward} coins as compensation!")
+        ConsolePrint(f"{client.get_user(user.id)} successfully burnt {CardCode} coins and recieved {CoinReward} coins as compensation!", "green")
+      elif(interactionEvent.data["custom_id"] == "button1"): #Prints cancellation of burn
         await ctx.send(f"<@{user.id}> cancelled the card burn!")
         ConsolePrint(f"{client.get_user(user.id)} cancelled the card burn!", "yellow")
     else:
+      #Prints if incorrect card code is typed
       await ctx.send(f"<@{user.id}>, you can't burn a card you don't own!")
       ConsolePrint(f"{client.get_user(user.id)} tried burning {CardCode}, a card they don't own!", "red")
 
@@ -956,7 +965,6 @@ async def burn(ctx, cardID):
   #Close connection to the database
   connection.close()
   
-
 
 """
   Command: .upgrade
@@ -974,48 +982,53 @@ async def upgrade(ctx, cardID):
   UC1 = cursor.fetchall()
   cursor.execute(f"SELECT * FROM users WHERE UserID = {user.id};")
   UserStats = cursor.fetchall()[0]
-
+  
   if(len(UC1) > 0):
     Card = UC1[0]
     CardCode = Card[0]
     CardOwnerUserID = Card[1]
 
-    if(CardOwnerUserID == user.id):
+    if(CardOwnerUserID == user.id): #Checks user 
       CardIndexNumber = Card[2]
       CardLevel = Card[3]
       CardBaseStats = Card[4]
+      #Gets rarity and upgrade cost
       CardRarity = BT.GetCardRarity(CardIndexNumber)
       UpgradeCost = BT.GetUpgradeCost(CardLevel, CardRarity)
-  
-      UserCoins = UserStats[3]
       
-      if(UserCoins >= UpgradeCost):
+      UserCoins = UserStats[3] #Finds user's coin value
+      
+      if(UserCoins >= UpgradeCost): #Checks if user has enough coins
+        #Updates coin value and card level
         cursor.execute(f"UPDATE users SET Coins = {UserCoins - UpgradeCost} WHERE UserID = {user.id}")
         cursor.execute(f"UPDATE cards SET CardLevel = {CardLevel + 1} WHERE CardCode = '{CardCode}'")
-  
+        #Updates card's stats according to new level
         CBSString = CardBaseStats.split("/")
         NewCBSString = ""
         for s in CBSString:
           NewCBSString += str(int(s) + 5) + "/"
-
+        #Prints new stats
         print(f"Card Stats: {NewCBSString[0:-1]}")
-        cursor.execute(f"UPDATE cards SET BaseStat = '{NewCBSString[0:-1]}' WHERE CardCode = '{CardCode}'")
+        cursor.execute(f"UPDATE cards SET BaseStat = '{NewCBSString[0:-1]}' WHERE CardCode = '{CardCode}'") #Set new stats as base
         
         #Commit changes to the database
         connection.commit()
-        
+        #Prints upgrade 
         await ctx.send(f"<@{user.id}>, `{CardCode}` has been upgraded from {CardLevel} to {CardLevel + 1}!")
         ConsolePrint(f"{client.get_user(user.id)} has upgraded `{CardCode}` from {CardLevel} to {CardLevel + 1}!", "green")
         
       else:
+        #Prints if user doesn't have enough coins
         await ctx.send(f"<@{user.id}>, you do not have enough coins to upgrade!")
         ConsolePrint(f"{client.get_user(user.id)} doesn't have enough coins to upgrade `{CardCode}`!", "red")
         
     else:
+      #Prints if user doesn't have the card
       await ctx.send(f"<@{user.id}>, you can't upgrade a card you don't own!")
       ConsolePrint(f"{client.get_user(user.id)} tried upgrading a card they don't own!", "red")
       
   else:
+    #Prints if card code doesn't exist
     await ctx.send(f"<@{user.id}>, {CardCode} is not a valid card code!")
     ConsolePrint(f"{client.get_user(user.id)} tried calling for an invalid card code!", "red")
 
@@ -1030,9 +1043,9 @@ async def upgrade(ctx, cardID):
 """
 @client.command()
 async def transactCoins(ctx, receiverUserID, coinAmount):
-  #Sender and Receiver ID's with transaction amount
+  #Sender and receiver ID's with transaction amount
   senderUserID = ctx.message.author.id
-  receiverUserID = int(receiverUserID[2:-1]) #substring for the userID from standard discord tag format <@userID>
+  receiverUserID = int(receiverUserID[2:-1]) #Substring for the userID from standard discord tag format <@userID>
   
   print(receiverUserID)
   print(type(receiverUserID))
@@ -1135,8 +1148,8 @@ async def viewCardInventory(ctx):
   
   CardsList = DL.GetCardsBaseStatList()
   UserCardsInventory = []
-  InventoryPageNumber = 0
-  NumberOfCards = 0
+  InventoryPageNumber = 0 #Sets default inventory page number
+  NumberOfCards = 0 #Sets default number of cards owned
 
   #Check if the user has at least one card in their inventory
   if len(UserCardsDB) > 0:
@@ -1147,7 +1160,7 @@ async def viewCardInventory(ctx):
       NumberOfCards += 1
 
       #For every 10th input or last card in the series, append row into a page
-      if((((i + 1) % 10 == 0) and (i > 0)) or (i == len(UserCardsDB) - 1)):
+      if((((i + 1) % 10 == 0) and (i > 0)) or (i == len(UserCardsDB ) - 1)):
         UserCardsInventory.append(L1)
         L1 = []
 
@@ -1156,19 +1169,24 @@ async def viewCardInventory(ctx):
       title=f"**Card Inventory**".format(user.mention),
       description=f"Cards carried by <@{user.id}>",
       color=discord.Color.from_rgb(255, 164, 101))
-    embedString = "**\n" #Create string to hold card infos for each page
     
     #Keep looping tell timeout of buttons run out
     while True:
       #Extract individual card info on the current page into the embed
       InventoryPage = UserCardsInventory[InventoryPageNumber]
+      embedString = "**\n" #Create string to hold card infos for each page
+      
       print(InventoryPageNumber)
       for i in range(len(InventoryPage)):
+        #Card info
         card = InventoryPage[i]
         cardCode = card[0]
         cardIndex = card[2]
         cardLevel = card[3]
-
+        BC = CardsList[cardIndex]
+        cardName = BC[1]
+        cardRarity = BT.GetRarityName(BC[2])
+        #Card stats
         cardStats = card[4].split("/")
         HP = cardStats[0]
         Atk = cardStats[1]
@@ -1176,9 +1194,6 @@ async def viewCardInventory(ctx):
         Mag = cardStats[3]
         MagDef = cardStats[4]
         Speed = cardStats[5]
-        BC = CardsList[cardIndex]
-        cardName = BC[1]
-        cardRarity = BT.GetRarityName(BC[2])
         
         #Add to embed string
         embedString += f"`🏷️{cardCode}` · `{cardName}` · 🔹{cardRarity} · `Lvl {cardLevel}` · {HP} ❤️ · {Atk} 🗡️ · {Def} 🛡️ · {Mag} 🔮 · {MagDef} 🔰 · {Speed} 👟\n"   
@@ -1211,29 +1226,32 @@ async def viewCardInventory(ctx):
       button4 = Button(label = "⏩", custom_id = "button4", style = discord.ButtonStyle.grey, disabled=DisableForwardButton)
       
       #View for embed with 60 secs timeout
-      view = View(timeout=60)
+      view = View()
       
       #Adds buttons to view
       view.add_item(button1)
       view.add_item(button2)
       view.add_item(button3)
       view.add_item(button4)
-      
+
       #Sends embed to discord
       msg = await ctx.send(embed=embedVar, view=view)
       
       #Wait for button press with 60 secs timeout
-      try: #to handle time out error
+      try: #To handle time out error
         interactionEvent = await client.wait_for(
           'interaction',
           timeout = 60,
-          check=lambda interaction: interaction.data["component_type"] == 4 and "custom_id" in interaction.data.keys())
-        
-      except asyncio.TimeoutError:
-        for button in view.children: #disable all buttons
+          check=lambda interaction: interaction.data["component_type"] == 2 and "custom_id" in interaction.data.keys())
+        print("BP3")
+              
+      except asyncio.TimeoutError: #When timeout occurs
+        print("BP4")
+        for button in view.children: #Disable all buttons
           button.disabled = True
         await msg.edit(embed=embedVar, view=view)
-        break #break the while loop
+        break #Break the while loop 
+
       else:
         #Check if user flips through pages
         if(interactionEvent.data["custom_id"] == "button1"):
@@ -1244,7 +1262,7 @@ async def viewCardInventory(ctx):
           InventoryPageNumber += 1
         elif(interactionEvent.data["custom_id"] == "button4"):
           InventoryPageNumber = len(UserCardsInventory) - 1
-        
+          
   else:
     #Prints if you have no cards
     await ctx.send(f"<@{user.id}>, you don't have any cards in your inventory!")
@@ -1263,7 +1281,7 @@ async def viewCardInventory(ctx):
 @client.command()
 @discord.ext.commands.has_permissions(administrator=True) #Only admins can use
 async def changeEXP(ctx, userID, EXPInput):  
-  userID = int(userID[2:-1]) #substring for the userID from standard discord tag format <@userID>
+  userID = int(userID[2:-1]) #Substring for the userID from standard discord tag format <@userID>
   
   EXPInput = round(int(EXPInput)) #Ensures EXP is a whole number
   
@@ -1274,7 +1292,7 @@ async def changeEXP(ctx, userID, EXPInput):
   US = cursor.fetchall()
   print(f"Before: {US}")  #Print before EXP values
 
-  #the [0] isn't place at the fetchall to prevent a index out of bounds error that occurs when cursor returns None
+  #The [0] isn't place at the fetchall to prevent a index out of bounds error that occurs when cursor returns None
   if(len(US) > 0):
     UserStats = US[0]
     #Calculate what level user goes to
@@ -1365,7 +1383,7 @@ async def changeCoins(ctx, userID, amount):
     await ctx.send(f"<@{userID}> is not in the database!")
     ConsolePrint(f"{client.get_user(userID)} is not in the database!", "red")
 
-  connection.close()
+  connection.close() #Closes connection to database
 
 
 """
@@ -1376,7 +1394,7 @@ async def changeCoins(ctx, userID, amount):
 @client.command()
 @discord.ext.commands.has_permissions(administrator=True) #Only admins can use
 async def changeMessageSent(ctx, userID, amount):
-  userID = int(userID[2:-1]) #substring for the userID from standard discord tag format <@userID>
+  userID = int(userID[2:-1]) #Substring for the userID from standard discord tag format <@userID>
   amount = int(amount)
   
   #Connects to database and read data
@@ -1389,7 +1407,7 @@ async def changeMessageSent(ctx, userID, amount):
   if len(US) > 0:
     UserStats = US[0]
     
-    #make sure msgAmount doesn't become a (-) value
+    #Make sure msgAmount doesn't become a -'ve
     newMsgAmount = 0 if UserStats[4] + amount < 0 else UserStats[4] + amount
 
     cursor.execute(f"UPDATE users SET MessagesSent = '{newMsgAmount}' WHERE UserID = {userID}")
@@ -1401,7 +1419,7 @@ async def changeMessageSent(ctx, userID, amount):
     #Commit changes to the database
     connection.commit()
 
-    #delete original user command, and print command success
+    #Delete original user command, and print command success
     await ctx.message.delete()
     await ctx.send(
       f"<@{userID}>'s message count has been updated by {amount} message(s)!")
@@ -1410,12 +1428,12 @@ async def changeMessageSent(ctx, userID, amount):
       "green")
 
   else:
+    #Prints that user isn't in database
     await ctx.send(f"<@{userID}> is not in the database!")
     ConsolePrint(f"{client.get_user(userID)} is not in the database!", "red")
 
   #Close the database connection
   connection.close()
-
 
 
 """
@@ -1424,7 +1442,7 @@ async def changeMessageSent(ctx, userID, amount):
   - SM
 """
 @client.command()
-@discord.ext.commands.has_permissions(administrator=True)
+@discord.ext.commands.has_permissions(administrator=True) #Only admins can use
 async def AddCard(ctx, CardIndexNumber, CardLevel, CBSString):
   user = ctx.author
   
@@ -1457,19 +1475,21 @@ async def printAllUsers(ctx):
   cursor.execute(f"SELECT * FROM users;")
   allUserStats = cursor.fetchall()
   allUserStats.sort(key=lambda x: int(x[1]), reverse=True)
-
+  #Starts print
   ConsolePrint(f"Starting to print...", "yellow")
-
-  for UserStats in allUserStats:
+  
+  for UserStats in allUserStats: #Gets users stats
     print(f"{client.get_user(UserStats[0])} --> {UserStats}")
-
+  #Finished printing
   await ctx.send(f"<@{ctx.message.author.id}>, the list has been printed in the console log!")
   ConsolePrint(f"All users' stats have been printed!", "green")
 
   #Close connection to the database
   connection.close()
+
+  
 #-----------------------------------#
-#Reset and Remove Commands#
+#Reset and Remove Commands
 #-----------------------------------#
 """
   Command: .removeUser
@@ -1479,7 +1499,7 @@ async def printAllUsers(ctx):
 @client.command()
 @discord.ext.commands.has_permissions(administrator=True) #Only admins can use
 async def removeUser(ctx, userID):
-  userID = int(userID[2:-1]) #substring for the userID from standard discord tag format <@userID>
+  userID = int(userID[2:-1]) #Substring for the userID from standard discord tag format <@userID>
   
   #Connects to the database and gets rid of all the user's defined stats
   connection = sqlite3.connect("Database.db")
@@ -1504,9 +1524,9 @@ async def removeUser(ctx, userID):
 @client.command()
 @discord.ext.commands.has_permissions(administrator=True) #Only admins can use
 async def resetUserStats(ctx, userID):
-  userID = int(userID[2:-1]) #substring for the userID from standard discord tag format <@userID>
+  userID = int(userID[2:-1]) #Substring for the userID from standard discord tag format <@userID>
   
-  #Connects to the database and set default values
+  #Connects to the database and set default 0 values
   connection = sqlite3.connect("Database.db")
   cursor = connection.cursor()
   
@@ -1516,9 +1536,8 @@ async def resetUserStats(ctx, userID):
   connection.commit()
   #Close connection to the database
   connection.close()
-
-  await ctx.send(
-    f"<@{userID}>'s stats has been reset! (Cards are not included)")
+  #Prints reset
+  await ctx.send(f"<@{userID}>'s stats has been reset! (Cards are not included)")
   ConsolePrint(f"<@{client.get_user(userID)}>'s stat has been reset!", "green")
 
 
@@ -1530,27 +1549,28 @@ async def resetUserStats(ctx, userID):
 @client.command()
 @discord.ext.commands.has_permissions(administrator=True) #Only admins can use
 async def resetUserCardInventory(ctx, userID):
-  UserID = int(userID[2:-1]) #substring for the userID from standard discord tag format <@userID>
+  UserID = int(userID[2:-1]) #Substring for the userID from standard discord tag format <@userID>
   
   #Connects to the database and delete all user owned cards
   connection = sqlite3.connect("Database.db")
   cursor = connection.cursor()
-
+  #Resets database of specific user's cards
   n = ""
   cursor.execute(f"DELETE FROM cards WHERE CardOwnerUserID = {UserID};")
-  cursor.execute(f"UPDATE users SET SelectedCardCode = '{n}' WHERE UserID = {user.id}")
+  cursor.execute(f"UPDATE users SET SelectedCardCode = '{n}' WHERE UserID = {UserID}")
   
   #Commit changes to the database
   connection.commit()
   #Close connection to the database
   connection.close()
 
+  #Prints that reset has occured
   await ctx.send(f"<@{UserID}>'s card inventory has been reset! (User stats not included!)")
   ConsolePrint(f"<@{client.get_user(UserID)}>'s cards inventory has been reset!", "green")
 
   
 #-----------------------------------#
-#Fun#
+#Fun
 #-----------------------------------#
 """
   Command: .botTalk
@@ -1561,11 +1581,11 @@ async def resetUserCardInventory(ctx, userID):
 @discord.ext.commands.has_permissions(administrator=True) #Only admins can use
 async def botTalk(ctx, *args):
   user = ctx.author
-  channelID = args[0]
-  message = args[1]
-  
+  channelID = args[0] #Records channel
+  message = args[1] #Records message
+  #Requests message to be sent on bots behalf
   ConsolePrint(f"<@{client.get_user(user.id)}> has requested for the bot to send this following message to channel {channelID}: {message}", "yellow")
-
+  #Sends message out
   channel = client.get_channel(int(channelID))
   await channel.send(message)
   await ctx.send(f"<@{user.id}>, the message has been sent!")
@@ -1625,7 +1645,7 @@ async def on_ready():
 """
 @client.event
 async def on_message(message):
-  if message.author == client.user:  #prevent bot's own messages
+  if message.author == client.user:  #Prevent bot's own messages
     return
   user = message.author
   
@@ -1635,26 +1655,26 @@ async def on_message(message):
   cursor.execute(f"SELECT * FROM users WHERE UserID = {user.id};")
   UserStats = cursor.fetchall()
 
-  #Create Default Data#
+  #Create default data
   if len(UserStats) == 0:
     UserStats = ST.SetDefaultData(user.id)
     channel = client.get_channel(ST.GetBotChannelID(message.guild.name))
 
-    #vvvvvv problem with channel send
+    #Prints addition of user's message to database
     await channel.send(f"{user.mention} has been added to the database!")
     ConsolePrint(f"{user.name} has been added to the database!", "green")
-
+  #Rewards user for messaging with EXP
   cursor.execute(f"SELECT * FROM users WHERE UserID = {user.id};")
   UserStats = cursor.fetchall()[0]
   EXPReward = ST.CalculateForChatEXP(len((message.content).split()))
   newLevel, EXPAtCurrentLevel, n = ST.CalculateForLevel(
     EXPReward, UserStats[1], UserStats[2])
 
-  #Level Up#
+  #Level up if enough EXP gathered
   if UserStats[2] != newLevel and newLevel > 0:
-    levelUpCoinReward = ST.GetLevelUpCoinReward(UserStats[2], newLevel)
+    levelUpCoinReward = ST.GetLevelUpCoinReward(UserStats[2], newLevel) #Gains coins for level up
     cursor.execute(f"UPDATE users SET Level = '{newLevel}', Coins = '{UserStats[3] + levelUpCoinReward}' WHERE UserID = {user.id}")
-
+    #Prints level up and coins to channel specified
     channel = client.get_channel(ST.GetBotChannelID(message.guild.name))
     await channel.send(f"<@{message.author.id}> has leveled up to level {newLevel}! {levelUpCoinReward} coins were awarded!")
 
@@ -1675,21 +1695,21 @@ async def on_message(message):
 """
 @client.event
 async def on_member_join(user):
-  channel = client.get_channel(ST.GetBotChannelID(user.guild.name))
-  await channel.send(f"<@{user.id}> has joined the server!")
+  channel = client.get_channel(ST.GetBotChannelID(user.guild.name)) #Gets channel info
+  await channel.send(f"<@{user.id}> has joined the server!") #Announces server entry
   
   #Connect to the database and read data
   connection = sqlite3.connect("Database.db")
   cursor = connection.cursor()
   cursor.execute(f"SELECT * FROM users WHERE UserID = {user.id};")
   UserStats = cursor.fetchall()
-
+  #Only adds user to database if they first join and aren't already in it
   if len(UserStats) == 0:
     ST.SetDefaultData(user.id)
     await channel.send(f"<@{user}> has been added to the database!")
     ConsolePrint(f"{user.name} has been added to the database!", "green")
 
-    connection.close()
+    connection.close() #Closes connection to database
 
 
 #-----------------------------------#
