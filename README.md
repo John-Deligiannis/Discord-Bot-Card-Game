@@ -1,2 +1,11 @@
 # Battle-Heroes-V2
 Bot prefix is set to "."
+
+How to Play:
+	For starters, you will have to run the discord bot to allow the bot to join the server. To start playing right away use the .claimStarterHero command to choose between 3 heroes to start your battle journey, then use .selectHero to place your first card into your deck for battle. To battle, use the .battle command to start a battle with your hero on deck. Remember that you can not start a battle without selecting a hero onto the deck! If you want to go through all possible commands available to you, use the .help command to see how to use them and a description of each. Use the .instructions command for quick in-bot instructions.
+
+	Once you win your first battle you will capture the hero you fought and it becomes a part of your collection. You will also receive coins and exp as rewards. Note, there are no consequences of losing, you just have to battle again. Furthermore, you can battle as much as you like, there is no cooldown to the battles or max number of battles that you can play. When your collection of heroes gets bigger and better, you will start to have cards that you do not need because you have better ones. The .burn command allows you to burn whatever card you own for coins and exp in return. The .upgrade command allows you to level up your heroes. Coins are not only good for upgrading your heroes, but with the .shop and .buy commands, you can get items that will help you progress through the game faster.
+
+
+Battle System:
+  When battling, you have 3 options; Normal Attack, Magic Attack and Forfeit. Normal attack uses the attack stat to attack, Magic attack uses the magic stat to attack and forfeit allows you to forfeit the battle at any stage in the battle. Defence and Magic Defence are the stats used to counter attack and magic attack respectively. The calculations work based on a +/- 15% damage variation. It takes the attack or magic attack, multiplies it by a random number between 0.85 to 1.15, then subtracts defence off that. The remaining damage will be applied on the enemy and the same from the enemy to your hero. The speed stat determines who attacks first and if the stat is the same then it randomly selects who goes first (50/50 chance).  
